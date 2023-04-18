@@ -53,5 +53,5 @@ cmap = plt.get_cmap('jet')
 m.scatter(x, y, 5, marker='o', color=cmap(norm(colors)))
 plt.colorbar(plt.cm.ScalarMappable(norm=norm, cmap=cmap), label='Cars')
 
-# show the map
-plt.show()
+# save as png with timestamp
+plt.savefig(f"heatmap_{timestamp}.png")

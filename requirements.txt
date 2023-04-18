@@ -1,7 +1,10 @@
 folium
-sqlite3
 numpy
 matplotlib
 pandas
 basemap
 basemap-data-hires
+opencv-python
+cvlib
+tensorflow
+markupsafe==2.0.1
