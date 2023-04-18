@@ -1,0 +1,7 @@
+folium
+sqlite3
+numpy
+matplotlib
+pandas
+basemap
+basemap-data-hires
