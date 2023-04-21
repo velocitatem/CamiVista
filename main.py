@@ -44,9 +44,10 @@ def create_db():
     # create the database
     conn = sqlite3.connect('cameras.db')
     c = conn.cursor()
-    # lat, lon, file, timestamp, cars (counted), highway, highway_position
+    # lat, lon, file, timestamp, cars (counted), highway, highway_position, heading (string)
     c.execute('''CREATE TABLE cameras
-                    (lat real, lon real, file text, timestamp text, highway text, highway_position real, cars integer)''')
+                    (lat real, lon real, file text, timestamp text, highway text, highway_position text, cars integer, heading text)''')
+
 
 
     conn.commit()
@@ -77,7 +78,7 @@ def save_data(data):
             urllib.request.urlretrieve(url, os.path.join(path, filename))
             count = count_cars(os.path.join(path, filename))
             # c.execute("INSERT INTO cameras VALUES (?, ?, ?, ?, ?)", (item['latitud'], item['longitud'], filename, timestamp, count))
-            c.execute("INSERT INTO cameras VALUES (?, ?, ?, ?, ?, ?, ?)", (item['latitud'], item['longitud'], filename, timestamp, item['carretera'], item['pk'], count))
+            c.execute("INSERT INTO cameras VALUES (?, ?, ?, ?, ?, ?, ?, ?)", (item['latitud'], item['longitud'], filename, timestamp, item['carretera'], item['pk'], count, item['sentido']))
             conn.commit()
         except:
             print('Error downloading', url)
