@@ -1,0 +1,105 @@
+#+begin_src python :tangle yes :results output :exports both :noweb yes :session data
+  import sqlite3
+  import os
+  import requests
+
+  import pandas as pd
+  conn = sqlite3.connect('cameras.db')
+  df = pd.read_sql_query("SELECT * FROM cameras", conn)
+  df = df.dropna()
+  print(df.head())
+  print(df.describe())
+#+end_src
+
+#+RESULTS:
+#+begin_example
+       lat     lon   file            timestamp  cars
+0  42.0676 -4.2227  2.jpg  2023-04-18_18-10-23     0
+1  41.9811 -4.4348  3.jpg  2023-04-18_18-10-23     0
+2  41.9227 -4.5063  4.jpg  2023-04-18_18-10-23     0
+3  41.8563 -4.5531  5.jpg  2023-04-18_18-10-23     1
+4  41.7026 -4.7118  6.jpg  2023-04-18_18-10-23     1
+                lat           lon          cars
+count  57100.000000  57100.000000  57100.000000
+mean      40.368556     -3.961676      1.725184
+std        1.976606      2.488074      3.452387
+min       36.156324     -8.749330      0.000000
+25%       39.411506     -5.318700      0.000000
+50%       40.439986     -3.755843      0.000000
+75%       42.016700     -2.461590      2.000000
+max       43.563800      3.100515     36.000000
+#+end_example
+
+Exploratory Data Analysis (EDA):
+Visualize the data using maps to get an overview of the distribution of cars across the highways.
+Create histograms or density plots to analyze the distribution of cars per highway section.
+Analyze the temporal distribution of car counts to identify any patterns or trends (e.g., peak hours, weekends).
+
+Get the number of timestamps in the dataset:
+
+#+begin_src python :tangle yes :results output :exports both :noweb yes :session data
+  df['timestamp'] = pd.to_datetime(df['timestamp'], format="%Y-%m-%d_%H-%M-%S")
+  print(df['timestamp'].nunique())
+#+end_src
+
+#+RESULTS:
+: 38
+
+Averages of data:
+
+
+#+begin_src python :tangle yes :results output :exports both :noweb yes :session data
+  import plotly.express as px
+  # for each location get the average number of cars over time
+  df_new = pd.DataFrame()
+  # go over the unique locations
+  for index, row in df[['lat', 'lon']].drop_duplicates().iterrows():
+      # get the average number of cars for this location
+      cars = df[(df['lat'] == row['lat']) & (df['lon'] == row['lon'])]['cars'].mean()
+      # add the average number of cars to the new dataframe
+      df_new = df_new.append({'lat': row['lat'], 'lon': row['lon'], 'cars': cars}, ignore_index=True)
+  print(df_new.head())
+
+  fig = px.scatter_mapbox(df_new, lat="lat", lon="lon", color="cars", size="cars", color_continuous_scale=px.colors.cyclical.IceFire, size_max=15, zoom=6)
+  fig.update_layout(mapbox_style="open-street-map")
+  fig.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
+  fig.show()
+#+end_src
+
+
+We now need to categorize the data into highway sections. We will use the following sections:
+
+{"camaras": [{"carretera": "A-62", "id": "2", "imagen": "http://infocar.dgt.es/etraffic/data/camaras/2.jpg", "fecha": "2022/03/09 08:45:11", "sentido": "-", "latitud": "42.0676", "longitud": "-4.2227", "provincia": "34", "pk": "57.9"}, {"carretera": "A-62", "id": "3", "imagen": "http://infocar.dgt.es/etraffic/data/camaras/3.jpg", "fecha": "2022/03/09 08:46:33", "sentido": "-", "latitud": "41.9811", "longitud": "-4.4348", "provincia": "34", "pk": "78.5"}, {"carretera": "A-62", "id": "4", "imagen": "http://infocar.dgt.es/etraffic/data/camaras/4.jpg", "fecha": "2022/03/09 08:49:25", "sentido": "+", "latitud": "41.9227", "longitud": "-4.5063", "provincia": "34", "pk": "87.9"}, {"carretera": "A-62
+
+Sample of what it looks like ^^
+
+1. get data from /mnt/s/Documents/Projects/SpainCameras/images/2023-04-19_08-46-56/cameras.json
+2. Match the coordinates with the carretera and pk
+
+#+begin_src python :tangle yes :results output :exports both :noweb yes :session data
+  # get the data from the json file
+  import json
+  with open('/mnt/s/Documents/Projects/SpainCameras/images/2023-04-19_08-46-56/cameras.json') as f:
+      data = json.load(f)
+
+  data = data['camaras']
+  data=  pd.DataFrame(data)
+  data['lat'] = data['latitud'].astype(float)
+  data['lon'] = data['longitud'].astype(float)
+
+  new_df = pd.DataFrame()
+
+  # get the carretera and pk for each location
+  for index, row in df.iterrows():
+      # get the carretera and pk for this location
+      carretera = data[(data['lat'] == row['lat']) & (data['lon'] == row['lon'])]['carretera'].values[0]
+      pk = data[(data['lat'] == row['lat']) & (data['lon'] == row['lon'])]['pk'].values[0]
+      # add the carretera and pk to the new dataframe
+      new_df = new_df.append({'lat': row['lat'], 'lon': row['lon'], 'cars': row['cars'], 'carretera': carretera, 'pk': pk}, ignore_index=True)
+
+
+
+  print(new_df.head())
+#+end_src
+
+#+RESULTS:
