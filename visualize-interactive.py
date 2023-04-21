@@ -44,7 +44,6 @@ for point in points:
     folium.Marker(location=point[:2], ).add_to(m)
     folium.CircleMarker(location=point[:2], radius=10, color=point[2], fill=True, fill_color=point[2], fill_opacity=0.9, popup=folium.Popup(f"<img src='/mnt/s/Documents/Projects/SpainCameras/images/{timestamp}/{point[3]}-aied.jpg' />")).add_to(m)
 
-# add the heatmap
 
 
 

@@ -13,6 +13,10 @@ df = df.dropna()
 # 3  41.8563 -4.5531  5.jpg  2023-04-18_19-10-41     0
 # 4  41.7026 -4.7118  6.jpg  2023-04-18_19-10-41     2
 
+# transform timestamp to datetime
+df['timestamp'] = pd.to_datetime(df['timestamp'], format="%Y-%m-%d_%H-%M-%S")
+
+
 # we are going to create a heatmap of the data
 # create a set of timestamps, and have user select one
 timestamps = df['timestamp'].unique()

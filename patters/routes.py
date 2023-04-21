@@ -61,47 +61,57 @@ for route in np.unique(routes):
     # folium.Marker([end['lat'], end['lon']], icon=folium.Icon(color='red', icon='info-sign')).add_to(m)
     # folium.PolyLine([[start['lat'], start['lon']], [end['lat'], end['lon']]], color='blue').add_to(m)
     directed_paths.append([[start['lat'], start['lon']], [end['lat'], end['lon']]])
-# go through each directed path and find a neighbor that is going in a similar direction
-# if a neighbor is found, draw an arrow from the start of the first to the start of the second and to the end of the second
-# use a cosine similarity to determine if the vectors are similar enough
-def cosine_similarity(a, b):
-    return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
 
-# for each path, look for a neighbor that is only 0.01 degrees away
-def proximity_check(path, path2):
-    # end of first is by the start of the second
-    end= path[1]
-    start = path2[0]
-    if abs(end[0] - start[0]) < 0.05 and abs(end[1] - start[1]) < 0.05:
-        return True
-    print("Not close enough")
+# use the directed paths to create a vector field and plot it on the map. Each directed path is a cector, interpolate the vectors to create a vector field
+# plot each vector as a simple arrow on the map
+field = []
+for i in range(len(directed_paths)):
+    for j in range(i+1, len(directed_paths)):
+        field.append([directed_paths[i], directed_paths[j]])
+# fill in the field with interpolated vectors to create a vector field
+# range of the field is from the minimum latitude to the maximum latitude, and from the minimum longitude to the maximum longitude of the data
+# the number of vectors in the field is the number of directed paths squared
+min_lat = df['lat'].min()
+max_lat = df['lat'].max()
+min_lon = df['lon'].min()
+max_lon = df['lon'].max()
+horizontal_count = len(directed_paths) ** 2
+vertical_count = len(directed_paths) ** 2
+
+def interpolate(position):
+    # position is a tuple of latitude and longitude
+    # closest_vector is a tuple of two tuples of latitude and longitude
+    # find the closest vector to the position by checking 0.01 degrees in each direction
+    closest_vectors = []
+    # search in a radious around the position to find the closest 3 vectors
+    while len(closest_vectors) < 3:
+        for i in range(-1, 2):
+            for j in range(-1, 2):
+                for vector in field:
+                    if vector[0][0] == position[0] + i * 0.01 and vector[0][1] == position[1] + j * 0.01:
+                        closest_vectors.append(vector)
+    # get the average direction of the closest vectors
+    direction = [0, 0]
+    for vector in closest_vectors:
+        direction[0] += vector[1][0] - vector[0][0]
+        direction[1] += vector[1][1] - vector[0][1]
+    direction[0] /= len(closest_vectors)
+    direction[1] /= len(closest_vectors)
+    # return the direction
+    return direction
+
+print(horizontal_count, vertical_count)
+empty_field = np.zeros((horizontal_count, vertical_count))
+for i in range(horizontal_count):
+    for j in range(vertical_count):
+        position = (min_lat + i * (max_lat - min_lat) / horizontal_count, min_lon + j * (max_lon - min_lon) / vertical_count)
+        direction = interpolate(position)
+        # create a new set of coordinates for the vector based on the direction and the position
+        print(direction)
 
 
 
-# find paths that are similar in direction and position and merge them
-
-def approx(directed_paths):
-    new_paths = []
-    for path in directed_paths:
-        for path2 in directed_paths:
-            print("Checking paths")
-            if proximity_check(path, path2):
-                # if the paths are similar, merge them
-                if cosine_similarity(path[1], path2[1]) > 0.9:
-                    # create a new path that is the first path with the second path appended to it
-                    new_path = path
-                    new_path.append(path2[1])
-                    new_paths.append(new_path)
-                    break
-
-    return new_paths
-
-for i in range(20):
-    directed_paths = approx(directed_paths)
-
-for path in directed_paths:
-    folium.PolyLine(path, color='blue').add_to(m)
-
+# plot the vector field on the map
 
 
 
